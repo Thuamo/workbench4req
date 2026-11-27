@@ -1,0 +1,15 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Workbench Frontend" type="js.build_tools.npm">
+    <package-json value="$PROJECT_DIR$/frontend/package.json" />
+    <command value="run" />
+    <scripts>
+      <script value="dev" />
+    </scripts>
+    <node-interpreter value="project" />
+    <envs>
+      <env name="NEXT_TELEMETRY_DISABLED" value="1" />
+      <env name="PORT" value="3000" />
+    </envs>
+    <method v="2" />
+  </configuration>
+</component>

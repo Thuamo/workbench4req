@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: workbench
+      POSTGRES_USER: workbench
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U workbench -d workbench']
+      interval: 5s
+      retries: 20
+  redis:
+    image: redis:7-alpine
+    command: [redis-server, --appendonly, 'yes']
+    volumes: [redis_data:/data]
+  init:
+    build: {context: ., dockerfile: backend/Dockerfile}
+    user: root
+    environment: &backend_environment
+      DATABASE_URL: postgresql+psycopg://workbench:${POSTGRES_PASSWORD}@postgres:5432/workbench
+      STORAGE_DIR: /app/data
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:-http://localhost:3000}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?Set ENCRYPTION_KEY in .env}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-1536}
+      CONVERTER_EXECUTABLE: soffice
+    volumes: [files:/app/data]
+    depends_on: {postgres: {condition: service_healthy}}
+    command: [sh, -c, 'chown -R 10001:10001 /app/data && alembic upgrade head && python -m app.cli seed']
+  api:
+    build: {context: ., dockerfile: backend/Dockerfile}
+    environment: *backend_environment
+    volumes: [files:/app/data]
+    depends_on: {init: {condition: service_completed_successfully}}
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, python, -c, 'import urllib.request; urllib.request.urlopen("http://localhost:8000/health")']
+      interval: 20s
+      retries: 3
+  worker:
+    build: {context: ., dockerfile: backend/Dockerfile}
+    environment: *backend_environment
+    volumes: [files:/app/data]
+    depends_on: {init: {condition: service_completed_successfully}}
+    command: [python, -m, app.worker]
+    restart: unless-stopped
+  web:
+    build: {context: ., dockerfile: frontend/Dockerfile}
+    ports: ['127.0.0.1:3000:3000']
+    depends_on: {api: {condition: service_healthy}}
+    restart: unless-stopped
+volumes:
+  postgres_data:
+  redis_data:
+  files:

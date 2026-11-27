@@ -1,0 +1,43 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Workbench API",
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "module": "uvicorn",
+      "args": ["app.main:app", "--host", "127.0.0.1", "--port", "8000"],
+      "cwd": "${workspaceFolder}",
+      "env": {"PYTHONPATH": "${workspaceFolder}/backend", "PYTHONIOENCODING": "utf-8", "PYTHONUNBUFFERED": "1"},
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Workbench Worker",
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "module": "app.worker",
+      "cwd": "${workspaceFolder}",
+      "env": {"PYTHONPATH": "${workspaceFolder}/backend", "PYTHONIOENCODING": "utf-8", "PYTHONUNBUFFERED": "1"},
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Workbench Frontend",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "node",
+      "program": "${workspaceFolder}/frontend/node_modules/next/dist/bin/next",
+      "args": ["dev", "--hostname", "127.0.0.1", "--port", "3000"],
+      "cwd": "${workspaceFolder}/frontend",
+      "env": {"NEXT_TELEMETRY_DISABLED": "1"},
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ],
+  "compounds": [
+    {"name": "Workbench All", "configurations": ["Workbench API", "Workbench Worker", "Workbench Frontend"], "stopAll": true}
+  ]
+}

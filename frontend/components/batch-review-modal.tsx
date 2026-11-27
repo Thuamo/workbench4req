@@ -1,0 +1,12 @@
+'use client';
+import {useRef,useState} from 'react';
+import type {Review,User} from '../lib/types';
+import {api} from '../lib/api';
+import {Modal,useAction} from './ui';
+import {DocumentPanel} from './knowledge';
+
+export function BatchReviewModal({user,rows,decision,close,complete}:{user:User;rows:Review[];decision:'approved'|'returned';close:()=>void;complete:()=>void}){
+ const [comment,setComment]=useState('');const [busy,setBusy]=useState(false);const running=useRef(false);const [preview,setPreview]=useState<Review|null>(null);const {perform}=useAction();
+ const returning=decision==='returned';
+ return <><Modal title={returning?'批量退回审核':'批量审核通过'} close={()=>{if(!running.current)close();}} wide><form onSubmit={async e=>{e.preventDefault();if(running.current||returning&&!comment.trim())return;running.current=true;setBusy(true);const result=await perform(()=>api('/review-tasks/batch-decision','POST',{decision,comment,items:rows.map(row=>({task_id:row.tasks.find(t=>t.reviewer_id===user.id)!.id,locked_hash:row.locked_hash}))}),returning?`已退回 ${rows.length} 份文件，本轮其他待签任务已取消`:`已完成 ${rows.length} 份审核，满足全部会签条件的文档将自动排队发布`);running.current=false;setBusy(false);if(result){complete();close();}}}><div className="form-fields"><p className="notice">本次将{ returning?'退回':'通过'} {rows.length} 份文件中分配给您的审核任务。请核对以下文件内容与版本。</p><div className="batch-review-files">{rows.map(row=><div className="version-row" key={row.id}><div><strong>{row.document.title}</strong><small className="block muted">{row.version.label} · {row.version.filename}</small></div><button type="button" className="secondary" disabled={busy} onClick={()=>setPreview(row)}>查看内容</button></div>)}</div><p className="muted small">任一任务已处理、版本变化或权限不符时整批不生效。{returning?'退回后，本轮其他未签署任务会取消，提交人须修改后创建新修订。':'批量通过只代表您的签署完成，全部审核员通过并成功构建索引后才成为正式可检索知识。'}</p><label>{returning?'统一退回原因（必填）':'统一审核意见（可选）'}<textarea aria-label={returning?'统一退回原因':'统一审核意见'} required={returning} disabled={busy} value={comment} maxLength={10000} rows={4} onChange={e=>setComment(e.target.value)}/></label></div><footer><button type="button" className="secondary" disabled={busy} onClick={close}>取消</button><button className={returning?'danger':'primary'} disabled={busy||returning&&!comment.trim()}>{busy?'正在提交…':returning?'确认批量退回':'确认批量通过'}</button></footer></form></Modal>{preview&&<DocumentPanel user={user} documentId={preview.document.id} initialVersionId={preview.version_id} close={()=>setPreview(null)}/>}</>;
+}

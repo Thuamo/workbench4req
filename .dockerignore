@@ -1,0 +1,11 @@
+.venv
+**/node_modules
+**/.next
+data
+test-results
+reference_files
+.env
+.git
+**/__pycache__
+docs/reference-extraction.json
+docs/reference-styles.json

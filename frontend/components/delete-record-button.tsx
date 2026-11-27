@@ -1,0 +1,10 @@
+'use client';
+import {useState} from 'react';
+import {api} from '../lib/api';
+import {Modal,useAction} from './ui';
+import {useNavigationGuard} from './navigation-guard';
+const labels:Record<string,string>={requirement:'需求',clarification_task:'澄清计划',question:'澄清问题',relation:'关联记录',document:'文档',agent_run:'执行任务',skill:'技能',knowledge_item:'知识条目',model_config:'模型配置',requirement_pack:'需求包'};
+export function DeleteRecordButton({kind,id,title,onDeleted,disabledReason,notice,endpoint}:{kind:string;id:string;title:string;onDeleted?:()=>void;disabledReason?:string;notice?:string;endpoint?:string}){
+ const [open,setOpen]=useState(false);const [busy,setBusy]=useState(false);const [error,setError]=useState('');const {perform}=useAction();const {request}=useNavigationGuard();
+ return <><button type="button" className="text-button delete-record-button" title={disabledReason||'删除'+labels[kind]} disabled={!!disabledReason} onClick={event=>{event.stopPropagation();request(()=>{setError('');setOpen(true);});}}>删除</button>{open&&<Modal title={'确认删除'+(labels[kind]||'记录')} close={()=>{if(!busy)setOpen(false);}}><div className="form-fields"><p>确定删除“<strong>{title}</strong>”吗？</p><p className="notice">{notice??'记录将从当前列表和待办中移除，历史版本、审核决定和引用关系保留。其他关联业务数据不会一并删除。'}</p>{kind==='document'&&<p className="muted small">会签或后台处理中暂不能删除；已审核或发布文档由管理员治理，删除后退出正式检索。</p>}{kind==='agent_run'&&<p className="muted small">尚未执行的任务会取消排队；正在执行的任务需完成后再删除。</p>}{error&&<p className="form-error" role="alert">{error}</p>}</div><footer><button className="secondary" disabled={busy} onClick={()=>setOpen(false)}>取消</button><button className="danger" disabled={busy} onClick={async()=>{setBusy(true);const result=await perform(async()=>{try{return await api(endpoint||'/records/'+kind+'/'+id,'DELETE',{confirm:true});}catch(reason){setError(reason instanceof Error?reason.message:'删除失败');throw reason;}},'记录已删除，历史引用保留');setBusy(false);if(result){setOpen(false);onDeleted?.();}}}>{busy?'删除中…':'确认删除'}</button></footer></Modal>}</>;
+}

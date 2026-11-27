@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Workbench All" type="CompoundRunConfigurationType">
+    <toRun name="Workbench API" type="PythonConfigurationType" />
+    <toRun name="Workbench Worker" type="PythonConfigurationType" />
+    <toRun name="Workbench Frontend" type="js.build_tools.npm" />
+    <method v="2" />
+  </configuration>
+</component>
